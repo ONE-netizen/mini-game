@@ -1,0 +1,142 @@
+tetris.py
+import pygame
+import random
+
+# Инициализация Pygame
+pygame.init()
+
+# Размеры окна
+screen_width = 300
+screen_height = 600
+cell_size = 30
+
+# Цвета
+colors = [
+    (0, 0, 0),
+    (255, 0, 0),
+    (0, 255, 0),
+    (0, 0, 255),
+    (255, 255, 0),
+    (255, 165, 0),
+    (128, 0, 128)
+]
+
+# Фигуры
+shapes = [
+    [[1, 1, 1],
+     [0, 1, 0]],
+
+    [[0, 2, 2],
+     [2, 2, 0]],
+
+    [[3, 3, 0],
+     [0, 3, 3]],
+
+    [[4, 4, 4, 4]],
+
+    [[5, 5],
+     [5, 5]],
+
+    [[0, 6, 0],
+     [6, 6, 6]],
+
+    [[0, 0, 7],
+     [7, 7, 7]]
+]
+
+class Tetris:
+    def _init_(self, screen):
+        self.screen = screen
+        self.board = [[0] * 10 for _ in range(20)]
+        self.current_piece = self.get_new_piece()
+        self.piece_x, self.piece_y = 3, 0
+        self.game_over = False
+
+    def get_new_piece(self):
+        return random.choice(shapes)
+
+    def draw_board(self):
+        for y in range(20):
+            for x in range(10):
+                pygame.draw.rect(self.screen, colors[self.board[y][x]], 
+                                 (x * cell_size, y * cell_size, cell_size, cell_size))
+
+    def draw_piece(self):
+        for y, row in enumerate(self.current_piece):
+            for x, cell in enumerate(row):
+                if cell:
+                    pygame.draw.rect(self.screen, colors[cell], 
+                                     ((self.piece_x + x) * cell_size, (self.piece_y + y) * cell_size, cell_size, cell_size))
+
+    def can_move(self, dx, dy):
+        for y, row in enumerate(self.current_piece):
+            for x, cell in enumerate(row):
+                if cell:
+                    new_x = self.piece_x + x + dx
+                    new_y = self.piece_y + y + dy
+                    if new_x < 0 or new_x >= 10 or new_y >= 20 or self.board[new_y][new_x]:
+                        return False
+        return True
+
+    def place_piece(self):
+        for y, row in enumerate(self.current_piece):
+            for x, cell in enumerate(row):
+                if cell:
+                    self.board[self.piece_y + y][self.piece_x + x] = cell
+        self.current_piece = self.get_new_piece()
+        self.piece_x, self.piece_y = 3, 0
+        if not self.can_move(0, 0):
+            self.game_over = True
+
+    def clear_lines(self):
+        new_board = [row for row in self.board if any(cell == 0 for cell in row)]
+        self.board = [[0] * 10 for _ in range(20 - len(new_board))] + new_board
+
+    def update(self):
+        if self.can_move(0, 1):
+            self.piece_y += 1
+        else:
+            self.place_piece()
+            self.clear_lines()
+
+    def move(self, dx):
+        if self.can_move(dx, 0):
+            self.piece_x += dx
+
+    def rotate(self):
+        new_piece = list(zip(*self.current_piece[::-1]))
+        if self.can_move(0, 0):
+            self.current_piece = new_piece
+
+def main():
+    screen = pygame.display.set_mode((screen_width, screen_height))
+    pygame.display.set_caption("Tetris")
+    clock = pygame.time.Clock()
+    game = Tetris(screen)
+
+    while not game.game_over:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    game.move(-1)
+                elif event.key == pygame.K_RIGHT:
+                    game.move(1)
+                elif event.key == pygame.K_DOWN:
+                    game.update()
+                elif event.key == pygame.K_UP:
+                    game.rotate()
+
+        screen.fill((0, 0, 0))
+        game.draw_board()
+        game.draw_piece()
+        pygame.display.flip()
+        clock.tick(10)
+        game.update()
+
+if _name_ == "_main_":
+    main()
+    pygame.quit()
+
+python tetris.py
